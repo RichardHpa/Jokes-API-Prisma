@@ -22,6 +22,7 @@ model Joke {
 model User {
   id String @id @default(cuid())
   name String @db.VarChar(255)
+  email String @unique
   jokes Joke[]
 }
 

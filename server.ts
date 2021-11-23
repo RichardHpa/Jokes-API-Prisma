@@ -1,8 +1,13 @@
 import express from 'express';
+import cors from 'cors';
 import type { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 
 const app = express();
+// Set up middleware
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 const prisma = new PrismaClient();
 
 // get all jokes
@@ -29,7 +34,6 @@ app.post('/jokes', async (req: Request, res: Response) => {
 // get a joke
 app.get('/jokes/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
-  // const id = 'ckwbgltlw0005hxx5iq5gch71';
   const joke = await prisma.joke.findFirst({ where: { id } });
   res.json(joke);
 });
@@ -51,6 +55,58 @@ app.delete('/jokes/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
   const joke = await prisma.joke.delete({ where: { id } });
   res.json(joke);
+});
+
+// register
+app.post('/register', async (req: Request, res: Response) => {
+  const { name, email } = req.body;
+  const checkUser = await prisma.user.findFirst({
+    where: {
+      email,
+    },
+  });
+
+  if (checkUser) {
+    res.json({
+      message: 'User already exists',
+    });
+  } else {
+    const user = await prisma.user.create({
+      data: {
+        name,
+        email,
+      },
+    });
+    res.json(user);
+  }
+});
+
+// login
+app.post('/login', (req: Request, res: Response) => {
+  const email = req.body.email;
+
+  if (!email) {
+    res.status(403);
+    res.send({
+      message: 'There is no email address that matches this.',
+    });
+  }
+
+  if (email) {
+    res.status(200);
+    res.send(email);
+  }
+});
+
+app.get('/users', async (req: Request, res: Response) => {
+  const users = await prisma.user.findMany();
+  res.json(users);
+});
+
+app.get('/users/:id', async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const user = await prisma.user.findFirst({ where: { id } });
+  res.json(user);
 });
 
 app.listen(3000, () => {
